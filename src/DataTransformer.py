@@ -1,6 +1,8 @@
 from os import walk
 import csv
+import sys
 
+print(">> RUNNING DATA TRANSFORMER...")
 
 files = [] # Original file names
 
@@ -12,11 +14,17 @@ for (dirpath, dirnames, filenames) in walk('../data'):
 class Columns:
   CountryRegion = None
   LastUpdate = None
+  Date = None
+
   Confirmed = None
   Deaths = None
   Recovered = None
   Active = None
-  Date = None
+  ConfirmedVariation = None
+  DeathsVariation = None
+  RecoveredVariation = None
+  ActiveVariation = None
+
 
 
 
@@ -30,7 +38,7 @@ def getStructure(cols):
 
 
 
-def mergeData(originalData, addon, cols, date):
+def mergeData(originalData, addon, cols, date, lastRow):
   newData = originalData
   parsedAddons = Columns()
   
@@ -51,21 +59,32 @@ def mergeData(originalData, addon, cols, date):
   newData.Recovered = float(newData.Recovered) + float(parsedAddons.Recovered)
   newData.Active = float(newData.Active) + float(parsedAddons.Active)
   newData.Date = date
+  if lastRow != None:
+    newData.DeathsVariation = newData.Deaths - lastRow.Deaths
+    newData.ActiveVariation = newData.Active - lastRow.Active
+    newData.ConfirmedVariation = newData.Confirmed - lastRow.Confirmed
+    newData.RecoveredVariation = newData.Recovered - lastRow.Recovered
+  else:
+    newData.DeathsVariation = 0
+    newData.ActiveVariation = 0
+    newData.ConfirmedVariation = 0
+    newData.RecoveredVariation = 0
   return newData
 
 
-def findCountry(name, content, date):
+def findCountry(name, content, date, lastRow):
   # Assemble the columns structure
   firstRow = None
   structure = Columns()
   resultRow = Columns()
-  for row in content:
+  for idx, row in enumerate(content):
     if firstRow == None:
       firstRow = row
       structure = getStructure(row)
     else:
       if row[structure.CountryRegion] == name:
-        resultRow = mergeData(resultRow, row, firstRow, date)
+        
+        resultRow = mergeData(resultRow, row, firstRow, date, lastRow)
   
   return resultRow
 
@@ -73,14 +92,18 @@ def findCountry(name, content, date):
 #for filename in files:
 print("\n >> [EXTRACTION] Getting data collection...")
 countryRows = []
-for filename in files[35:]:
+for idx, filename in enumerate(files[35:]):
   with open('../data/' + filename) as file:
     spamreader = csv.reader(file, dialect='excel')
-    print(" >> [FIND] Getting the target country")
-    country = findCountry(name="Brazil", content=spamreader, date=filename.replace(".csv", ""))
-    print(" >> [FIND] DONE!")
+    print("   >> [FIND] Getting the target country " + str(idx+1) + "/" + str(len(files[35:])), end="\r")
+    last = None
+    if len(countryRows) > 0:
+      last = countryRows[-1]
+    country = findCountry(name="Brazil", content=list(spamreader), date=filename.replace(".csv", ""), lastRow=last)
     countryRows.append(country)
 
+print("   >> [FIND] Getting the target country " + str(len(files[35:])) + "/" + str(len(files[35:])))
+print("   >> [FIND] DONE!")
 print(" >> [EXTRACTION] DONE! LENGTH = " + str(len(countryRows)))
 
 
@@ -105,18 +128,13 @@ print(" >> [TRANSFORM] DONE!")
 
 
 print("\n >> [LOAD] Loading data into Data.csv")
-print(dataArray)
 with open('../treatedData/Data.csv', mode="w", newline='') as dataFile:
   writer = csv.writer(dataFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
   writer.writerows(dataArray)
 print(" >> [LOAD] Done")
 
 
-
-
-for d in dataArray:
-  print(d)
-
+print("\n>> ALL DONE!")
 
 
 
