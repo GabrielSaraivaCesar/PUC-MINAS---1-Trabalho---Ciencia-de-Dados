@@ -38,8 +38,8 @@ def getFileNames(files):
 files = [] # Original file names
 
 # Unpack
-for (dirpath, dirnames, filenames) in walk('../data'):
-  files = filenames
+for (dirpath, dirnames, filenames) in walk('../data/COVID-19/csse_covid_19_data/csse_covid_19_daily_reports/'):
+  files = filenames[1:-1]
 
 with open('../treatedData/'+ countryName +'.csv') as file:
     spamreader = csv.reader(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -48,7 +48,7 @@ with open('../treatedData/'+ countryName +'.csv') as file:
       data.append(row)
 
 
-print("\n >> [READING] Getting data for each column...")
+print(" >> [READING] Getting data for each column...")
 confirmed = getAllByIndex(data[1:], 0)
 deaths = getAllByIndex(data[1:], 1)
 recovered = getAllByIndex(data[1:], 2)
@@ -194,9 +194,9 @@ def loadStatistics():
   #     print("     ", keyB, ":", getattr(statistics[key], keyB))
   #   print("   }")
 
+  print(" >> [STATISTICS] DONE!")
   return statistics
 
-  print(" >> [STATISTICS] DONE!")
 
 
 
@@ -205,18 +205,18 @@ def loadStatistics():
 # DRAW
 def loadChart(statistics):
   def plotRange():
-    return getFileNames(files)[(len(files) - len(data)):-1]
+    return getFileNames(files)[(len(files) - len(data) + 1):]
   
   def getLabels():
-    def pers(value, total):
-      return round(total/100*value)
-    names = getFileNames(files)
-    labels = [names[-1]]
-    for i in range(9):
-      labels.append(names[pers((i+1)*10, len(names))])
-      print(pers(i*10, (len(names))))
-    print(labels)
-    return labels
+    def pers(v, l):
+      return math.ceil(l / 100 * v) - 1
+    lbs = plotRange()
+    l = len(lbs)
+    result = []
+    result.append(lbs[0])
+    for i in range(10):
+      result.append(lbs[pers((i+1)*10, l)])
+    return result
 
   print("\n >> [CHART] Drawing canvas...")
   
@@ -273,5 +273,5 @@ def loadChart(statistics):
 statistics = loadStatistics()
 loadChart(statistics)
 
-print("\n>> ALL DONE!")
+print(">> ALL DONE!")
 
