@@ -1,5 +1,5 @@
 ## Usage
 
-```bash
+``` bash
 python run.py Brazil
 ```
