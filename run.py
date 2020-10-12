@@ -6,6 +6,10 @@ countryName = "Brazil"
 if len(sys.argv) > 1:
   countryName = " ".join(sys.argv[1:])
 
+if os.path.exists(path+'\\data') == False:
+  os.mkdir(path+'\\data')
+if os.path.exists(path+'\\treatedData') == False:
+  os.mkdir(path+'\\treatedData')
 
 # SYNC DATA
 print("\n>> SYNCING DATA...")
