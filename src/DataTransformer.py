@@ -10,6 +10,10 @@ files = [] # Original file names
 for (dirpath, dirnames, filenames) in walk('../data'):
   files = filenames
 
+countryName = "Brazil"
+if len(sys.argv) > 1:
+  countryName = " ".join(sys.argv[1:])
+
 
 class Columns:
   CountryRegion = None
@@ -77,32 +81,37 @@ def findCountry(name, content, date, lastRow):
   firstRow = None
   structure = Columns()
   resultRow = Columns()
+  rowsLen = 0
   for idx, row in enumerate(content):
     if firstRow == None:
       firstRow = row
       structure = getStructure(row)
     else:
       if row[structure.CountryRegion] == name:
-        
+        rowsLen = rowsLen + 1
         resultRow = mergeData(resultRow, row, firstRow, date, lastRow)
   
+  if (rowsLen == 0):
+    return None
   return resultRow
 
 
 #for filename in files:
 print("\n >> [EXTRACTION] Getting data collection...")
 countryRows = []
-for idx, filename in enumerate(files[35:]):
+for idx, filename in enumerate(files):
   with open('../data/' + filename) as file:
     spamreader = csv.reader(file, dialect='excel')
-    print("   >> [FIND] Getting the target country " + str(idx+1) + "/" + str(len(files[35:])), end="\r")
+    print("   >> [FIND] Getting the target country " + str(idx+1) + "/" + str(len(files)), end="\r")
     last = None
     if len(countryRows) > 0:
       last = countryRows[-1]
-    country = findCountry(name="Brazil", content=list(spamreader), date=filename.replace(".csv", ""), lastRow=last)
-    countryRows.append(country)
+    
+    country = findCountry(name=countryName, content=list(spamreader), date=filename.replace(".csv", ""), lastRow=last)
+    if country != None:
+      countryRows.append(country)
 
-print("   >> [FIND] Getting the target country " + str(len(files[35:])) + "/" + str(len(files[35:])))
+print("   >> [FIND] Getting the target country " + str(len(files)) + "/" + str(len(files)))
 print("   >> [FIND] DONE!")
 print(" >> [EXTRACTION] DONE! LENGTH = " + str(len(countryRows)))
 
@@ -127,8 +136,8 @@ print(" >> [TRANSFORM] DONE!")
 
 
 
-print("\n >> [LOAD] Loading data into Data.csv")
-with open('../treatedData/Data.csv', mode="w", newline='') as dataFile:
+print("\n >> [LOAD] Loading data into "+ countryName +".csv")
+with open('../treatedData/'+countryName+'.csv', mode="w", newline='') as dataFile:
   writer = csv.writer(dataFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
   writer.writerows(dataArray)
 print(" >> [LOAD] Done")

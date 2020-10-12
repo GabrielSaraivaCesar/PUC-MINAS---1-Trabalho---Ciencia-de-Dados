@@ -3,8 +3,14 @@ import matplotlib.pyplot as plt
 from os import walk
 import numpy as np
 import math
+import sys
 
 print("\n>> RUNNING DATA PRINTER")
+
+countryName = "Brazil"
+if len(sys.argv) > 1:
+  countryName = " ".join(sys.argv[1:])
+  
 
 # Loading
 def getAllByIndex(data, index):
@@ -35,7 +41,7 @@ files = [] # Original file names
 for (dirpath, dirnames, filenames) in walk('../data'):
   files = filenames
 
-with open('../treatedData/Data.csv') as file:
+with open('../treatedData/'+ countryName +'.csv') as file:
     spamreader = csv.reader(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     data = []
     for row in spamreader:
@@ -165,64 +171,107 @@ class Statistic:
       setattr(self, 'd' + str(i+1) + 'M', somaDecil / len(decil))
 
 
-print("\n >> [STATISTICS] Running statistics calculations...")
-statistics = {
-  "deaths": Statistic(deaths),
-  "confirmed": Statistic(confirmed),
-  "recovered": Statistic(recovered),
-  "active": Statistic(active),
-  "deathsVariation": Statistic(deathsVariation),
-  "confirmedVariation": Statistic(confirmedVariation),
-  "recoveredVariation": Statistic(recoveredVariation),
-  "activeVariation": Statistic(activeVariation),
-}
+def loadStatistics():
+  print("\n >> [STATISTICS] Running statistics calculations...")
+  statistics = {
+    "deaths": Statistic(deaths),
+    "confirmed": Statistic(confirmed),
+    "recovered": Statistic(recovered),
+    "active": Statistic(active),
+    "deathsVariation": Statistic(deathsVariation),
+    "confirmedVariation": Statistic(confirmedVariation),
+    "recoveredVariation": Statistic(recoveredVariation),
+    "activeVariation": Statistic(activeVariation),
+  }
 
 
 
-#PRINT STATISTICS
-for key in statistics:
-  print("   "+str(key), ": {")
-  for keyB in statistics[key].__dict__:
-    if keyB == "data": continue
-    print("     ", keyB, ":", getattr(statistics[key], keyB))
-  print("   }")
+  #PRINT STATISTICS
+  # for key in statistics:
+  #   print("   "+str(key), ": {")
+  #   for keyB in statistics[key].__dict__:
+  #     if keyB == "data": continue
+  #     print("     ", keyB, ":", getattr(statistics[key], keyB))
+  #   print("   }")
 
-print(" >> [STATISTICS] DONE!")
+  return statistics
+
+  print(" >> [STATISTICS] DONE!")
 
 
 
 
 
 # DRAW
-print("\n >> [CHART] Drawing canvas...")
-#plt.plot(getFileNames(files)[35:-1], deaths, 'r', getFileNames(files)[35:-1], confirmed, 'b', getFileNames(files)[35:-1], recovered, 'g', getFileNames(files)[35:-1], active, 'orange')
-#plt.plot(getFileNames(files)[35:-1], confirmed, 'b')
-#plt.plot(getFileNames(files)[35:-1], recovered, 'g')
-#plt.plot(getFileNames(files)[35:-1], active, 'orange')
-#plt.plot(getFileNames(files)[35:-1], deaths, 'r')
+def loadChart(statistics):
+  def plotRange():
+    return getFileNames(files)[(len(files) - len(data)):-1]
+  
+  def getLabels():
+    def pers(value, total):
+      return round(total/100*value)
+    names = getFileNames(files)
+    labels = [names[-1]]
+    for i in range(9):
+      labels.append(names[pers((i+1)*10, len(names))])
+      print(pers(i*10, (len(names))))
+    print(labels)
+    return labels
 
-#plt.bar(getFileNames(files)[35:-1], confirmedVariation, color="b")
-#plt.bar(getFileNames(files)[35:-1], recoveredVariation, color="g")
-plt.bar(getFileNames(files)[35:-1], activeVariation, color="orange")
-#plt.bar(getFileNames(files)[35:-1], deathsVariation, color="r")
+  print("\n >> [CHART] Drawing canvas...")
+  
+  fig, axs = plt.subplots(2,2)
+  fig.subplots_adjust(hspace=0.4)
+  
+  #ax1.plot(plotRange(), deaths, 'r', plotRange(), confirmed, 'b', plotRange(), recovered, 'g', plotRange(), active, 'orange')
+  axs[0,0].plot(plotRange(), confirmed, 'b')
+  axs[0,1].plot(plotRange(), recovered, 'g')
+  axs[1,0].plot(plotRange(), active, 'orange')
+  axs[1,1].plot(plotRange(), deaths, 'r')
+  
+  #ax1.set_xticks(ticks=getLabels())
+  axs[0,0].set_xticks(ticks=getLabels())
+  axs[0,1].set_xticks(ticks=getLabels())
+  axs[1,0].set_xticks(ticks=getLabels())
+  axs[1,1].set_xticks(ticks=getLabels())
 
-desvioPadrao = []
-for i in range(len(getFileNames(files)[35:-1])):
-  desvioPadrao.append(statistics['activeVariation'].desvioPadrao)
-plt.plot(getFileNames(files)[35:-1],  desvioPadrao, 'purple')
+  axs[0,0].set_xticklabels(fontsize=7, rotation=15, labels=getLabels())
+  axs[0,0].set_title("Casos Confirmados")
 
-plt.xticks(rotation=25, ticks=[getFileNames(files)[35], getFileNames(files)[65],  getFileNames(files)[95], getFileNames(files)[125], getFileNames(files)[155], getFileNames(files)[185], getFileNames(files)[215], getFileNames(files)[240], getFileNames(files)[-1]])
-#plt.xlabel('Gráfico completo do COVID-19 no Brasil (' + getFileNames(files)[35] + "-" + getFileNames(files)[-1] + ")")
+  axs[0,1].set_xticklabels(fontsize=7, rotation=15, labels=getLabels())
+  axs[0,1].set_title("Recuperações")
+
+  axs[1,0].set_xticklabels(fontsize=7, rotation=15, labels=getLabels())
+  axs[1,0].set_title("Casos Ativos")
+  
+  axs[1,1].set_xticklabels(fontsize=7, rotation=15, labels=getLabels())
+  axs[1,1].set_title("Mortes")
+
+  #plt.bar(plotRange(), confirmedVariation, color="b")
+  #plt.bar(plotRange(), recoveredVariation, color="g")
+  #plt.bar(plotRange(), activeVariation, color="orange")
+  #plt.bar(plotRange(), deathsVariation, color="r")
+
+  desvioPadrao = []
+  for i in range(len(plotRange())):
+    desvioPadrao.append(statistics['active'].desvioPadrao)
+  #plt.plot(plotRange(),  desvioPadrao, 'purple')
+
+  #plt.xlabel('Gráfico completo do COVID-19 no Brasil (' + getFileNames(files)[35] + "-" + getFileNames(files)[-1] + ")")
 
 
 
 
-# DECIL
-#d = statistics['activeVariation']
-#plt.bar(["0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"], [d.d1M,d.d2M,d.d3M,d.d4M,d.d5M,d.d6M,d.d7M,d.d8M,d.d9M,d.d10M,], color="r")
-#d = statistics['recovered']
-#plt.bar(["0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"], [d.d1M,d.d2M,d.d3M,d.d4M,d.d5M,d.d6M,d.d7M,d.d8M,d.d9M,d.d10M,], color="g")
+  # DECIL
+  #d = statistics['activeVariation']
+  #plt.bar(["0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"], [d.d1M,d.d2M,d.d3M,d.d4M,d.d5M,d.d6M,d.d7M,d.d8M,d.d9M,d.d10M,], color="r")
+  #d = statistics['recovered']
+  #plt.bar(["0-1", "1-2", "2-3", "3-4", "4-5", "5-6", "6-7", "7-8", "8-9", "9-10"], [d.d1M,d.d2M,d.d3M,d.d4M,d.d5M,d.d6M,d.d7M,d.d8M,d.d9M,d.d10M,], color="g")
+  plt.show()
+  print(" >> [CHART] DONE!")
 
-print(" >> [CHART] DONE!")
+statistics = loadStatistics()
+loadChart(statistics)
+
 print("\n>> ALL DONE!")
-plt.show()
+
